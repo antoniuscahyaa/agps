@@ -1,1 +1,27 @@
-
+name: agps-mirror
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unduh LTO
+        run: |
+          mkdir -p docs
+          curl -fsSL --retry 3 -o docs/lto.dat https://gllto.glpals.com/7day/v6/latest/lto.dat
+          test -s docs/lto.dat
+          ! head -c1 docs/lto.dat | grep -q '<'
+      - name: Commit jika berubah
+        run: |
+          git config user.name github-actions
+          git config user.email actions@github.com
+          git add docs/lto.dat
+          if ! git diff --cached --quiet; then
+            git commit -m "update lto.dat"
+            git push
+          fi
